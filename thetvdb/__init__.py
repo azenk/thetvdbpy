@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 from xml.dom.minidom import parse, parseString
-import httplib
+import urllib2
 
+import datetime
+import random
 import inspect
 
 class thetvdb:
@@ -12,24 +14,32 @@ class thetvdb:
 		"""
 		self.apikey = apikey
 		self.mirrors = self.___getmirrors()
-		print self.mirrors
+		random.seed()
 
 	def ___choosemirror(self,mirrortype):
 		"""Choose a mirror at random"""
-		pass
+		if mirrortype == "xml":
+			index = random.randint(0,len(self.mirrors["xmlmirrors"])-1)	
+			return self.mirrors["xmlmirrors"][index]
+		elif mirrortype == "banner":
+			index = random.randint(0,len(self.mirrors["bannersmirrors"])-1)	
+			return self.mirrors["bannersmirrors"][index]
+		elif mirrortype == "zip":
+			index = random.randint(0,len(self.mirrors["zipmirrors"])-1)	
+			return self.mirrors["zipmirrors"][index]
+
+	def ___geturl(self,url):
+		f = urllib2.urlopen(url)
+		document = f.read()
+		return document
 
 	def ___getmirrors(self):
 		"""
 		Returns a list of mirrors
 		"""
 		mirrordict = {"xmlmirrors":[],"bannermirrors":[],"zipmirrors":[]}
-		conn = httplib.HTTPConnection("www.thetvdb.com")
-		conn.request("GET","/api/%s/mirrors.xml" % self.apikey)
-		r1 = conn.getresponse()
-		if r1.status != 200:
-			# TODO: throw useful exception
-			pass
-		document = r1.read()
+		url = "http://www.thetvdb.com/api/%s/mirrors.xml" % self.apikey
+		document = self.___geturl(url)
 		#print document
 		dom = parseString(document)
 		mirrors = dom.getElementsByTagName("Mirror")
@@ -50,3 +60,18 @@ class thetvdb:
 				mirrordict["zipmirrors"].append(url)
 
 		return mirrordict
+
+	def getservertime(self):
+		"""Gets the current server time, returns as a datetime.datetime object"""
+		url = "http://www.thetvdb.com/api/Updates.php?type=none"
+		dom = parseString(self.___geturl(url))
+		time = dom.getElementsByTagName("Time")[0].firstChild.nodeValue
+		return datetime.datetime.fromtimestamp(float(time))
+
+	def getserieszip(self,seriesid,filename):
+		"""Download zipfile for series"""
+		url = "%s/api/%s/series/%i/all/en.zip" % (self.___choosemirror("zip"),self.apikey,seriesid)
+		z = self.___geturl(url)
+		f = open(filename,"w")
+		f.write(z)
+		

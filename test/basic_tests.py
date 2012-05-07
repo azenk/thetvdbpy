@@ -12,6 +12,9 @@ def main():
 	(options,args) = p.parse_args()
 	tvdb = thetvdb.thetvdb(options.apikey)
 
+	print "Server time: %s" % tvdb.getservertime()
+	tvdb.getserieszip(72073,"test.zip")
+
 if __name__ == "__main__":
 	main()
 	
