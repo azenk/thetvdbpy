@@ -3,14 +3,21 @@
 import sys
 sys.path.insert(0,"..")
 from optparse import OptionParser
+import ConfigParser
 
 import thetvdb
 
 def main():
 	p = OptionParser()
-	p.add_option("-a","--apikey",dest="apikey")
+	p.add_option("-c","--config",dest="config")
 	(options,args) = p.parse_args()
-	tvdb = thetvdb.thetvdb(options.apikey)
+
+        cp = ConfigParser.ConfigParser()
+        cp.read([options.config])
+
+	apikey = cp.get("thetvdb","apikey")
+
+	tvdb = thetvdb.thetvdb(apikey)
 
 	print "Server time: %s" % tvdb.getservertime()
 	tvdb.getserieszip(72073,"test.zip")
